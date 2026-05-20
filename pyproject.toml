@@ -7,7 +7,7 @@ name = "ttc-mm"
 version = "0.1.0"
 description = "Download TTC price-table data and integrate with Master Merchant"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "GPL-3.0-only" }
 
 [project.scripts]
 ttc-mm = "ttc_mm.cli:main"
