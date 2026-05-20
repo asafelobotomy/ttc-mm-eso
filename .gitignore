@@ -1,0 +1,28 @@
+# ESO addon source files used only for reference during development
+eso_addon_tools/
+
+# Python virtual environment
+.venv/
+
+# Build / packaging artifacts
+dist/
+build/
+*.egg-info/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Test / coverage caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
