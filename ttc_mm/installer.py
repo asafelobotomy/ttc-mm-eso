@@ -22,6 +22,19 @@ class InstallerError(Exception):
     """Raised when file installation fails."""
 
 
+def _remove_file_if_present(dest: Path, *, dry_run: bool = False) -> str | None:
+    """Delete *dest* when present and return a short action label."""
+    if not dest.exists():
+        return None
+    if dry_run:
+        return "would remove stale file"
+    try:
+        dest.unlink()
+    except OSError as exc:
+        raise InstallerError(f"Failed to remove {dest.name}: {exc}") from exc
+    return "removed stale file"
+
+
 def _atomic_write(dest: Path, data: bytes, *, backup_suffix: str = "") -> str:
     """Write *data* to *dest* atomically via a temp file + os.replace().
 
@@ -79,6 +92,18 @@ def install_mode_a(
         action = _atomic_write(dest, src_path.read_bytes(), backup_suffix=backup_suffix)
         results.append((filename, action))
 
+    target_region = None
+    if "PriceTableEU.lua" in extracted:
+        target_region = "EU"
+    elif "PriceTableNA.lua" in extracted:
+        target_region = "NA"
+    if target_region is not None:
+        stale_region = "NA" if target_region == "EU" else "EU"
+        stale_file = ttc_dir / f"PriceTable{stale_region}.lua"
+        action = _remove_file_if_present(stale_file, dry_run=dry_run)
+        if action is not None:
+            results.append((stale_file.name, action))
+
     return results
 
 
@@ -122,6 +147,12 @@ def install_mode_b(
             continue
         action = _atomic_write(ttc_dir / filename, src_path.read_bytes(), backup_suffix=backup_suffix)
         results.append((filename, action))
+
+    stale_region = "NA" if region == "EU" else "EU"
+    stale_file = ttc_dir / f"PriceTable{stale_region}.lua"
+    action = _remove_file_if_present(stale_file, dry_run=dry_run)
+    if action is not None:
+        results.append((stale_file.name, action))
 
     # --- Addon manifest (TamrielTradeCentre.txt) -------------------------
     price_table_file = f"PriceTable{region}.lua"

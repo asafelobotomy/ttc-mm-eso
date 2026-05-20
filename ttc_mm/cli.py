@@ -125,13 +125,13 @@ def _cmd_convert(args: argparse.Namespace) -> None:
         print("Skipping MM saved-variables patch (SavedVariables directory not found).")
         return
 
-    sv_path = paths.saved_variables_dir / "ShopkeeperSavedVars.lua"
-    if not sv_path.exists():
-        print("Skipping MM saved-variables patch (ShopkeeperSavedVars.lua not found).")
+    from ttc_mm.patcher import offer_patch, PatcherError, find_saved_vars_file
+    sv_path = find_saved_vars_file(paths.saved_variables_dir)
+    if sv_path is None:
+        print("Skipping MM saved-variables patch (Master Merchant saved vars file not found).")
         print("  This is normal if ESO has never been launched with Master Merchant.")
         return
 
-    from ttc_mm.patcher import offer_patch, PatcherError
     try:
         offer_patch(sv_path, dry_run=args.dry_run)
     except PatcherError as exc:

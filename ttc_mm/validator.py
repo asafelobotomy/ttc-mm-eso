@@ -109,9 +109,15 @@ def run_status(paths: ResolvedPaths) -> None:
 
     if paths.saved_variables_dir:
         print(f"SavedVars dir : {paths.saved_variables_dir}")
-        sv_file = paths.saved_variables_dir / "ShopkeeperSavedVars.lua"
-        if sv_file.exists():
-            from ttc_mm.patcher import read_patch_state, PATCH_TARGETS, PRICE_MODE_LABELS
+        from ttc_mm.patcher import (
+            read_patch_state,
+            PATCH_TARGETS,
+            PRICE_MODE_LABELS,
+            find_saved_vars_file,
+        )
+        sv_file = find_saved_vars_file(paths.saved_variables_dir)
+        if sv_file is not None:
+            print(f"  Using saved vars: {sv_file.name}")
             current = read_patch_state(sv_file)
             print("MM TTC settings:")
             for key, (typ, _suggested) in PATCH_TARGETS.items():
@@ -124,7 +130,7 @@ def run_status(paths: ResolvedPaths) -> None:
                     label = str(val)
                 print(f"  {key:35s}: {label}")
         else:
-            print("  ShopkeeperSavedVars.lua not found")
+            print("  Master Merchant saved vars file not found")
     else:
         print("SavedVars dir : not found")
 

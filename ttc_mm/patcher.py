@@ -13,6 +13,9 @@ class PatcherError(Exception):
     """Raised when a saved-variable patch operation fails."""
 
 
+SAVED_VARS_FILENAMES = ("MasterMerchant.lua", "ShopkeeperSavedVars.lua")
+
+
 # MM_PRICE_* integer constants from MasterMerchant_Namespace_Init.lua.
 MM_PRICE_TTC_SUGGESTED = 1
 MM_PRICE_TTC_AVERAGE = 2
@@ -71,9 +74,9 @@ def _patch_value(content: str, key: str, new_value: object) -> str:
         lua_val = f'"{new_value}"'
 
     pattern = re.compile(r'(\["' + re.escape(key) + r'"\]\s*=\s*)(\w+)')
-    new_content = pattern.sub(lambda m: m.group(1) + lua_val, content)
-    if new_content == content:
+    if pattern.search(content) is None:
         raise PatcherError(f"Key {key!r} not found in saved variables file")
+    new_content = pattern.sub(lambda m: m.group(1) + lua_val, content)
     return new_content
 
 
@@ -85,10 +88,19 @@ def read_patch_state(saved_vars_path: Path) -> dict[str, object]:
     return {key: _read_value(content, key) for key in PATCH_TARGETS}
 
 
+def find_saved_vars_file(saved_variables_dir: Path) -> Path | None:
+    """Return the first supported Master Merchant saved vars file in *saved_variables_dir*."""
+    for filename in SAVED_VARS_FILENAMES:
+        candidate = saved_variables_dir / filename
+        if candidate.exists():
+            return candidate
+    return None
+
+
 def offer_patch(saved_vars_path: Path, *, dry_run: bool = False) -> None:
     """Interactively offer to patch TTC-related MM saved-variable settings."""
     if not saved_vars_path.exists():
-        print("  ShopkeeperSavedVars.lua not found — patch step skipped.")
+        print("  Master Merchant saved vars file not found — patch step skipped.")
         return
 
     current = read_patch_state(saved_vars_path)
