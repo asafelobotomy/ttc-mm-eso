@@ -12,6 +12,9 @@ license = { text = "GPL-3.0-only" }
 [project.scripts]
 ttc-mm = "ttc_mm.cli:main"
 
+[project.gui-scripts]
+ttc-mm-gui = "ttc_mm.gui:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 

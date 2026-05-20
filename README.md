@@ -13,6 +13,12 @@ A Python CLI tool that downloads [Tamriel Trade Centre](https://tamrieltradecent
 pip install ttc-mm
 ```
 
+For local development with the desktop GUI entry point:
+
+```bash
+pip install -e .
+```
+
 ## Usage
 
 ### Download and install price data
@@ -24,7 +30,7 @@ ttc-mm convert
 By default the tool detects your ESO AddOns directory automatically. Supply a path to override:
 
 ```bash
-ttc-mm convert --path "/path/to/Elder Scrolls Online/live/AddOns"
+ttc-mm convert --addons-path "/path/to/Elder Scrolls Online/live/AddOns"
 ```
 
 Select the server region (default: `na`):
@@ -45,16 +51,54 @@ ttc-mm status
 ttc-mm validate
 ```
 
+## Desktop GUI
+
+Launch the built-in desktop wrapper with:
+
+```bash
+ttc-mm-gui
+```
+
+Run a non-graphical prerequisite check with:
+
+```bash
+ttc-mm-gui --self-check
+```
+
+The GUI wraps the same underlying workflow as the CLI:
+
+- choose your ESO `AddOns` path
+- pick `EU` or `NA`
+- run `Status`, `Validate`, or `Convert`
+- optionally apply a Master Merchant TTC pricing profile during `Convert`
+
+The GUI uses Tkinter, so your Python install needs Tk support available.
+
+## AppImage build
+
+The repository includes a simple AppImage build script for Linux:
+
+```bash
+python -m pip install pyinstaller
+bash scripts/build-appimage.sh
+```
+
+Prerequisites:
+
+- `PyInstaller`
+- `appimagetool`
+- Tk runtime libraries available to your Python install
+
+The resulting AppImage is written to `dist/ttc-mm-gui-<arch>.AppImage`.
+
 ## How it works
 
 `ttc-mm` walks the filesystem to locate your `AddOns/MasterMerchant/` directory and then operates in one of two modes:
 
-| Mode | Condition | Behaviour |
-|------|-----------|-----------|
-| **A** | `TamrielTradeCentre/` addon is present | Downloads and overwrites the official TTC price-table files in-place |
-| **B** | No TTC addon found | Deploys a lightweight compat addon (`TTC_MM_Compat/`) that exposes the same Lua globals MM expects |
+- **Mode A**: if `TamrielTradeCentre/` is already present, `ttc-mm` updates the official TTC price-table files in place.
+- **Mode B**: if TTC is not installed, `ttc-mm` deploys a lightweight compat `TamrielTradeCentre/` addon so Master Merchant can read TTC data.
 
-After installing the data files, `ttc-mm` automatically patches `ShopkeeperSavedVars.lua` to enable TTC pricing inside Master Merchant.
+After installing the data files, `ttc-mm` can patch Master Merchant saved variables to enable TTC pricing inside the addon.
 
 ## License
 

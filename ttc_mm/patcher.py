@@ -44,6 +44,12 @@ PATCH_TARGETS: dict[str, tuple[type, object]] = {
     "agsSalePriceToUse":         (int,  MM_PRICE_TTC_SUGGESTED),
 }
 
+_GUI_PRICE_MODES = {
+    MM_PRICE_TTC_SUGGESTED,
+    MM_PRICE_TTC_AVERAGE,
+    MM_PRICE_TTC_SALES,
+}
+
 
 def _read_value(content: str, key: str) -> object | None:
     """Extract the raw Lua value for *key* from saved-var file content."""
@@ -97,6 +103,42 @@ def find_saved_vars_file(saved_variables_dir: Path) -> Path | None:
     return None
 
 
+def build_ttc_patch_changes(price_mode: int) -> dict[str, object]:
+    """Return a full TTC-oriented MM patch set using *price_mode* for numeric settings."""
+    if price_mode not in _GUI_PRICE_MODES:
+        valid = ", ".join(str(mode) for mode in sorted(_GUI_PRICE_MODES))
+        raise PatcherError(f"Unsupported TTC price mode {price_mode!r}. Valid values: {valid}")
+
+    changes: dict[str, object] = {}
+    for key, (value_type, suggested) in PATCH_TARGETS.items():
+        changes[key] = price_mode if value_type is int else suggested
+    return changes
+
+
+def apply_patch_changes(
+    saved_vars_path: Path,
+    changes: dict[str, object],
+    *,
+    dry_run: bool = False,
+) -> tuple[Path | None, int]:
+    """Apply explicit saved-vars *changes* and return ``(backup_path, count)``."""
+    if not saved_vars_path.exists():
+        raise PatcherError(f"Saved variables file not found: {saved_vars_path}")
+    if not changes:
+        return None, 0
+
+    content = saved_vars_path.read_text(encoding="utf-8", errors="ignore")
+    for key, value in changes.items():
+        content = _patch_value(content, key, value)
+
+    if dry_run:
+        return None, len(changes)
+
+    backup = backup_saved_vars(saved_vars_path)
+    saved_vars_path.write_text(content, encoding="utf-8")
+    return backup, len(changes)
+
+
 def offer_patch(saved_vars_path: Path, *, dry_run: bool = False) -> None:
     """Interactively offer to patch TTC-related MM saved-variable settings."""
     if not saved_vars_path.exists():
@@ -143,14 +185,10 @@ def offer_patch(saved_vars_path: Path, *, dry_run: bool = False) -> None:
         print(f"  [dry-run] would apply {len(changes)} change(s): {changes}")
         return
 
-    backup = backup_saved_vars(saved_vars_path)
-    print(f"  Backed up to: {backup.name}")
-
-    content = saved_vars_path.read_text(encoding="utf-8", errors="ignore")
-    for key, value in changes.items():
-        content = _patch_value(content, key, value)
-    saved_vars_path.write_text(content, encoding="utf-8")
-    print(f"  Applied {len(changes)} change(s).")
+    backup, change_count = apply_patch_changes(saved_vars_path, changes)
+    if backup is not None:
+        print(f"  Backed up to: {backup.name}")
+    print(f"  Applied {change_count} change(s).")
 
 
 def backup_saved_vars(saved_vars_path: Path) -> Path:

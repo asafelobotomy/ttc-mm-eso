@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=ttc-mm
+Comment=GUI wrapper for TTC download and Master Merchant integration
+Exec=ttc-mm-gui
+Icon=ttc-mm
+Terminal=false
+Categories=Utility;Game;
